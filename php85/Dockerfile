@@ -3,7 +3,7 @@ FROM docker-registry.wikimedia.org/dev/trixie-php-sury:1.0.0-s2-arm1
 ENV PHP_VERSION=8.5
 
 # Not installing php-tidy here - see https://phabricator.wikimedia.org/T191771
-RUN apt-get update && apt-get install -yq \
+RUN apt-get update && apt-get upgrade -yq && apt-get install -yq \
     php8.5 \
     php8.5-apcu \
     php8.5-ast \

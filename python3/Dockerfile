@@ -12,5 +12,5 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-RUN apt-get update && apt-get install -yq python3 \
+RUN apt-get update && apt-get upgrade -yq && apt-get install -yq python3 \
     && rm -rf /var/lib/apt/lists/*
