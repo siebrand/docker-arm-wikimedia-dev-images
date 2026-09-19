@@ -30,10 +30,79 @@ jobs:
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
+      packages: write
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build all images
         run: ./build.sh
+
+      - name: Tag images for ghcr.io
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          docker tag docker-registry.wikimedia.org/dev/bookworm-apache2:1.0.1-s3-arm1        ghcr.io/siebrand/bookworm-apache2:1.0.1-s3-arm1
+          docker tag docker-registry.wikimedia.org/dev/bookworm-apache2:1.0.1-s3-arm1        ghcr.io/siebrand/bookworm-apache2:1.0.1-s3-arm1-${SHA}
+          docker tag docker-registry.wikimedia.org/dev/bookworm-php85-fpm:1.0.0-arm1         ghcr.io/siebrand/bookworm-php85-fpm:1.0.0-arm1
+          docker tag docker-registry.wikimedia.org/dev/bookworm-php85-fpm:1.0.0-arm1         ghcr.io/siebrand/bookworm-php85-fpm:1.0.0-arm1-${SHA}
+          docker tag docker-registry.wikimedia.org/dev/bookworm-php85-fpm:1.0.0-arm1-python3 ghcr.io/siebrand/bookworm-php85-fpm:1.0.0-arm1-python3
+          docker tag docker-registry.wikimedia.org/dev/bookworm-php85-fpm:1.0.0-arm1-python3 ghcr.io/siebrand/bookworm-php85-fpm:1.0.0-arm1-python3-${SHA}
+          docker tag docker-registry.wikimedia.org/dev/bookworm-php85-jobrunner:1.0.0-arm1         ghcr.io/siebrand/bookworm-php85-jobrunner:1.0.0-arm1
+          docker tag docker-registry.wikimedia.org/dev/bookworm-php85-jobrunner:1.0.0-arm1         ghcr.io/siebrand/bookworm-php85-jobrunner:1.0.0-arm1-${SHA}
+          docker tag docker-registry.wikimedia.org/dev/bookworm-php85-jobrunner:1.0.0-arm1-python3 ghcr.io/siebrand/bookworm-php85-jobrunner:1.0.0-arm1-python3
+          docker tag docker-registry.wikimedia.org/dev/bookworm-php85-jobrunner:1.0.0-arm1-python3 ghcr.io/siebrand/bookworm-php85-jobrunner:1.0.0-arm1-python3-${SHA}
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push images
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          docker push ghcr.io/siebrand/bookworm-apache2:1.0.1-s3-arm1
+          docker push ghcr.io/siebrand/bookworm-apache2:1.0.1-s3-arm1-${SHA}
+          docker push ghcr.io/siebrand/bookworm-php85-fpm:1.0.0-arm1
+          docker push ghcr.io/siebrand/bookworm-php85-fpm:1.0.0-arm1-${SHA}
+          docker push ghcr.io/siebrand/bookworm-php85-fpm:1.0.0-arm1-python3
+          docker push ghcr.io/siebrand/bookworm-php85-fpm:1.0.0-arm1-python3-${SHA}
+          docker push ghcr.io/siebrand/bookworm-php85-jobrunner:1.0.0-arm1
+          docker push ghcr.io/siebrand/bookworm-php85-jobrunner:1.0.0-arm1-${SHA}
+          docker push ghcr.io/siebrand/bookworm-php85-jobrunner:1.0.0-arm1-python3
+          docker push ghcr.io/siebrand/bookworm-php85-jobrunner:1.0.0-arm1-python3-${SHA}
+
+      - name: Delete old image versions (bookworm-apache2)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/delete-package-versions@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          package-type: container
+          package-name: bookworm-apache2
+          min-versions-to-keep: 10
+          ignore-versions: '^1\.0\.1-s3-arm1$'
+
+      - name: Delete old image versions (bookworm-php85-fpm)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/delete-package-versions@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          package-type: container
+          package-name: bookworm-php85-fpm
+          min-versions-to-keep: 10
+          ignore-versions: '^1\.0\.0-arm1(-python3)?$'
+
+      - name: Delete old image versions (bookworm-php85-jobrunner)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/delete-package-versions@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          package-type: container
+          package-name: bookworm-php85-jobrunner
+          min-versions-to-keep: 10
+          ignore-versions: '^1\.0\.0-arm1(-python3)?$'
