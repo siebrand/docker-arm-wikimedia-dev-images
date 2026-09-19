@@ -7,7 +7,7 @@ ENV PHP_VERSION=8.5
 # arm64 packages, so this image takes all of PHP from Sury.
 
 # Not installing php-tidy here - see https://phabricator.wikimedia.org/T191771
-RUN apt-get update && apt-get install -yq \
+RUN apt-get update && apt-get upgrade -yq && apt-get install -yq \
     php8.5 \
     php8.5-apcu \
     php8.5-ast \

@@ -1,7 +1,7 @@
 FROM docker-registry.wikimedia.org/bookworm:latest
 
 # We don't want the default index.html for running PHP applications.
-RUN apt-get update && apt-get install -yq apache2 \
+RUN apt-get update && apt-get upgrade -yq && apt-get install -yq apache2 \
     && rm /var/www/html/index.html \
     && a2enmod proxy_fcgi \
     && a2enmod mpm_event \

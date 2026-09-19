@@ -1,6 +1,6 @@
 FROM docker-registry.wikimedia.org/dev/bookworm-php85:1.0.0-arm1
 
-RUN apt-get update && apt-get install -yq ffmpeg \
+RUN apt-get update && apt-get upgrade -yq && apt-get install -yq ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # MediaWiki default settings

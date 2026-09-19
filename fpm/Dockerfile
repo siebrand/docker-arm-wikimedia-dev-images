@@ -6,7 +6,7 @@ ENV XDEBUG_MODE=off
 # xdebug is a major performance drag, so disable it here (it's already
 # been disabled for CLI PHP in bookworm-php85).
 
-RUN apt-get update && apt-get install -yq php8.5-fpm \
+RUN apt-get update && apt-get upgrade -yq && apt-get install -yq php8.5-fpm \
     && rm -rf /var/lib/apt/lists/*
 
 # php-fpm configuration:
