@@ -1,4 +1,4 @@
-FROM docker-registry.wikimedia.org/dev/bookworm-php85:1.0.0-arm1
+FROM docker-registry.wikimedia.org/dev/bookworm-php85:1.0.0-s1-arm1
 
 ENV XDEBUG_MODE=off
 

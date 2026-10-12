@@ -30,6 +30,8 @@ RUN apt-get update && apt-get upgrade -yq && apt-get install -yq \
     php8.5-xdebug \
     php8.5-xhprof \
     build-essential \
+    djvulibre-bin \
+    netpbm \
     && rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --set php /usr/bin/php8.5
