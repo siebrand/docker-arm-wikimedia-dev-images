@@ -1,5 +1,7 @@
 # Wikimedia dev debian images with Dockerfiles
-This tool and script helps to create arm/(Mac M1 compatible) images for the developer environment on the Wikimedia framework. Which helps with performance and debugging on arm machines.
+
+This tool and script helps to create arm/ (Mac M1 compatible) images for the developer environment on the Wikimedia
+framework. Which helps with performance and debugging on arm machines.
 
 The images mirror the upstream ones from
 [repos/releng/dev-images](https://gitlab.wikimedia.org/repos/releng/dev-images).
@@ -37,6 +39,22 @@ Three files stay different on purpose: the FPM pool size and error log in
 `entrypoint.sh`. The script lists upstream changes to these for review
 instead of expecting them to match.
 
+### Publishing updated images
+
+After an upstream sync (new tags in `build.sh`, a moved `upstream.pin`, or
+changed mirrored files), rebuild and publish so the registry images are
+current:
+
+1. Commit the changes and push to `main`. The GitHub Actions `Build Images`
+   workflow (`.github/workflows/build.yml`) builds the `-arm1` images on an
+   arm runner and, on push to `main`, tags and pushes them to
+   `ghcr.io/siebrand/<image>:<tag>`.
+2. The same workflow also runs on a weekly schedule, so routine upstream
+   package refreshes get picked up even without a push.
+
+To build the images locally instead of waiting for CI, run `./build.sh`
+(see below).
+
 ## How to use Arm Docker images in your project
 
 - Run the following to create local images
@@ -65,3 +83,60 @@ instead of expecting them to match.
   ```shell
   docker-compose up -d
   ```
+
+## How to use the images with the `mw` CLI
+
+If you run MediaWiki through the [`mw` CLI](https://gitlab.wikimedia.org/repos/releng/cli)
+(`mw docker ...`) instead of a core `docker-compose.override.yml`, it does not
+read that override file. Point it at the published `ghcr.io/siebrand/*` images
+with its own environment variables:
+
+- Set the MediaWiki (FPM) image. The job runner shares this variable, so this
+  covers both the `mediawiki` and `mediawiki-jobrunner` services:
+    ```shell
+    mw docker mediawiki image set ghcr.io/siebrand/trixie-php85-fpm:1.0.0-s2-arm1-python3
+    ```
+
+- Set the web (Apache) image:
+    ```shell
+    mw docker env set MEDIAWIKI_WEB_IMAGE ghcr.io/siebrand/trixie-apache2:1.0.0-s1-arm1
+    ```
+
+- Pull the images and (re)create the containers so they run on the new images:
+    ```shell
+    docker pull ghcr.io/siebrand/trixie-php85-fpm:1.0.0-s2-arm1-python3
+    docker pull ghcr.io/siebrand/trixie-apache2:1.0.0-s1-arm1
+    mw docker mediawiki create
+    mw docker mediawiki jobrunner create
+    ```
+
+- Check what each variable is set to (or reset to the upstream default):
+    ```shell
+    mw docker mediawiki image get
+    mw docker env get MEDIAWIKI_WEB_IMAGE
+    mw docker mediawiki image reset
+    ```
+
+### Refreshing the `mw` environment after new images are published
+
+When a new image version is published (for example after an upstream sync that
+bumps a tag in `build.sh`), update the local environment to the new tags:
+
+1. Set the variables to the new tags with the `image set` / `env set` commands
+   above.
+2. Pull the new images and recreate the affected services:
+    ```shell
+    docker pull ghcr.io/siebrand/trixie-php85-fpm:<new-tag>
+    docker pull ghcr.io/siebrand/trixie-apache2:<new-tag>
+    mw docker mediawiki create
+    mw docker mediawiki jobrunner create
+    ```
+
+`mw docker mediawiki create` recreates containers in place, so a plain
+`create` after pulling is enough — no need to destroy the environment. Verify
+with:
+
+```shell
+docker ps --filter name=mwcli-mwdd-default-mediawiki \
+  --format '{{.Names}} -> {{.Image}}'
+```
